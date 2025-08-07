@@ -32,18 +32,32 @@ public class OnnxDepthEstimator : IDisposable
 
         try
         {
-            // Create ONNX Runtime session
+            // Create ONNX Runtime session with optimized configuration
             var sessionOptions = new SessionOptions();
             
+            // Configure session options for better performance
+            sessionOptions.GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL;
+            sessionOptions.ExecutionMode = ExecutionMode.ORT_PARALLEL;
+            
             // Try to use GPU if available, fallback to CPU
+            bool cudaAvailable = false;
             try
             {
+                // Configure CUDA execution provider for CUDA 12.x support
+                // Use simple device ID configuration first
                 sessionOptions.AppendExecutionProvider_CUDA(0);
-                Console.WriteLine("Using CUDA execution provider for depth estimation");
+                cudaAvailable = true;
+                Console.WriteLine("CUDA execution provider initialized for ONNX Runtime 1.21.0");
+                Console.WriteLine("Compatible with CUDA 12.8/12.9 and later versions");
             }
-            catch
+            catch (Exception cudaEx)
             {
-                Console.WriteLine("CUDA not available, using CPU execution provider for depth estimation");
+                Console.WriteLine($"CUDA not available or failed to initialize: {cudaEx.Message}");
+                Console.WriteLine("Falling back to CPU execution provider");
+                Console.WriteLine("For GPU acceleration, ensure:");
+                Console.WriteLine("  1. NVIDIA GPU with CUDA 12.8+ drivers");
+                Console.WriteLine("  2. CUDA Runtime 12.8+ installed");
+                Console.WriteLine("  3. cuDNN library compatible with CUDA 12.x");
             }
 
             _session = new InferenceSession(modelPath, sessionOptions);
@@ -52,7 +66,9 @@ public class OnnxDepthEstimator : IDisposable
             _inputName = _session.InputMetadata.Keys.First();
             _outputName = _session.OutputMetadata.Keys.First();
 
+            var provider = cudaAvailable ? "CUDA (GPU)" : "CPU";
             Console.WriteLine($"Depth estimation model loaded: {Path.GetFileName(modelPath)}");
+            Console.WriteLine($"Execution provider: {provider}");
             Console.WriteLine($"Input: {_inputName}, Output: {_outputName}");
         }
         catch (Exception ex)

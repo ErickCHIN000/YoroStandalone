@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("YORO.Core")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1832427195f07e5879eae859766708fad36db325")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c2ab7d1c4b86cb18b95d5b7d15887312189b59a1")]
 [assembly: System.Reflection.AssemblyProductAttribute("YORO.Core")]
 [assembly: System.Reflection.AssemblyTitleAttribute("YORO.Core")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -38,13 +38,9 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "dependencies": {
-            "Microsoft.ML.OnnxRuntime": {
-              "target": "Package",
-              "version": "[1.19.2, )"
-            },
             "Microsoft.ML.OnnxRuntime.Gpu": {
               "target": "Package",
-              "version": "[1.19.2, )"
+              "version": "[1.21.0, )"
             },
             "SixLabors.ImageSharp": {
               "target": "Package",
