@@ -1,10 +1,12 @@
 {
   "version": 2,
-  "dgSpecHash": "r7/CcQ5OJA9igIHc4CbKBt2dO+Uecr2llkrcDLZpRqj6DGvl2lGzAS1UCq99RjtkiBl4QLlOylzVBvjewb6viw==",
+  "dgSpecHash": "WymKhoTaT5rqWymOaijRo32l1gqy5ITbix2klu1xKnU8WrwxTdBclymisoTn1HpqCY78mR+ckcrfqJHhAWgncg==",
   "success": true,
   "projectFilePath": "/home/runner/work/YoroStandalone/YoroStandalone/YORO.ConsoleApp/YORO.ConsoleApp.csproj",
   "expectedPackageFiles": [
     "/home/runner/.nuget/packages/microsoft.csharp/4.0.1/microsoft.csharp.4.0.1.nupkg.sha512",
+    "/home/runner/.nuget/packages/microsoft.ml.onnxruntime/1.19.2/microsoft.ml.onnxruntime.1.19.2.nupkg.sha512",
+    "/home/runner/.nuget/packages/microsoft.ml.onnxruntime.managed/1.19.2/microsoft.ml.onnxruntime.managed.1.19.2.nupkg.sha512",
     "/home/runner/.nuget/packages/microsoft.netcore.platforms/1.0.1/microsoft.netcore.platforms.1.0.1.nupkg.sha512",
     "/home/runner/.nuget/packages/microsoft.netcore.targets/1.0.1/microsoft.netcore.targets.1.0.1.nupkg.sha512",
     "/home/runner/.nuget/packages/newtonsoft.json/9.0.1/newtonsoft.json.9.0.1.nupkg.sha512",
@@ -19,6 +21,7 @@
     "/home/runner/.nuget/packages/system.io.filesystem.primitives/4.0.1/system.io.filesystem.primitives.4.0.1.nupkg.sha512",
     "/home/runner/.nuget/packages/system.linq/4.1.0/system.linq.4.1.0.nupkg.sha512",
     "/home/runner/.nuget/packages/system.linq.expressions/4.1.0/system.linq.expressions.4.1.0.nupkg.sha512",
+    "/home/runner/.nuget/packages/system.memory/4.5.5/system.memory.4.5.5.nupkg.sha512",
     "/home/runner/.nuget/packages/system.numerics.vectors/4.6.1/system.numerics.vectors.4.6.1.nupkg.sha512",
     "/home/runner/.nuget/packages/system.objectmodel/4.0.12/system.objectmodel.4.0.12.nupkg.sha512",
     "/home/runner/.nuget/packages/system.reflection/4.1.0/system.reflection.4.1.0.nupkg.sha512",

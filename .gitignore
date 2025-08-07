@@ -1,0 +1,40 @@
+# Build outputs
+bin/
+obj/
+*.dll
+*.pdb
+*.deps.json
+*.runtimeconfig.json
+
+# Visual Studio / VS Code
+.vs/
+.vscode/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Temporary files
+*.tmp
+*.temp
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Models
+*.onnx
+models/
+
+# Demo files
+demo_*.jpg
+demo_*.png
+demo_*.mp4
