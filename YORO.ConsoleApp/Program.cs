@@ -32,10 +32,12 @@ class Program
         Console.WriteLine("  -m, --mode <quality|performance>  Processing mode (default: quality)");
         Console.WriteLine("  -s, --scale <2|4|8|16>           Reprojection scale for performance mode (default: 2)");
         Console.WriteLine("  -p, --patcher <yoro|sample>      Performance patcher mode (default: yoro)");
+        Console.WriteLine("  -c, --chunk <size>               Chunk size for video processing (default: 100)");
         Console.WriteLine();
         Console.WriteLine("Examples:");
         Console.WriteLine("  YORO.ConsoleApp.exe input.jpg output_sbs.jpg");
         Console.WriteLine("  YORO.ConsoleApp.exe input.mp4 output_sbs.mp4 --mode performance --scale 4");
+        Console.WriteLine("  YORO.ConsoleApp.exe input.mp4 output_sbs.mp4 --chunk 50");
         Console.WriteLine();
     }
 
@@ -74,7 +76,7 @@ class Program
             Patcher = YOROPerformancePatcher.YORO
         };
 
-        var processor = new VideoProcessor(config);
+        var processor = new VideoProcessor(config, 100);
 
         Console.WriteLine("Processing image...");
         var success = await processor.ConvertImageAsync(demoImagePath, outputImagePath);
@@ -114,6 +116,7 @@ class Program
 
         // Parse options
         var config = new YOROConfig();
+        var chunkSize = 100; // Default chunk size
         
         for (int i = 2; i < args.Length; i++)
         {
@@ -153,6 +156,17 @@ class Program
                             Console.WriteLine($"Warning: Invalid patcher '{args[i]}', using default.");
                     }
                     break;
+                case "-c":
+                case "--chunk":
+                    if (i + 1 < args.Length && int.TryParse(args[++i], out var chunk) && chunk > 0)
+                    {
+                        chunkSize = chunk;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Warning: Invalid chunk size, using default ({chunkSize}).");
+                    }
+                    break;
             }
         }
 
@@ -161,9 +175,10 @@ class Program
         Console.WriteLine($"Mode: {config.Mode}");
         Console.WriteLine($"Scale: {config.ReprojectionScale}");
         Console.WriteLine($"Patcher: {config.Patcher}");
+        Console.WriteLine($"Chunk Size: {chunkSize}");
         Console.WriteLine();
 
-        var processor = new VideoProcessor(config);
+        var processor = new VideoProcessor(config, chunkSize);
 
         try
         {

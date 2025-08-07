@@ -8,17 +8,27 @@ using System.Collections.Concurrent;
 namespace YORO.Core;
 
 /// <summary>
-/// Video processor that handles 2D to 3D SBS conversion for video files
+/// Video processor that handles 2D to 3D SBS conversion for video files with chunked processing for storage efficiency
 /// </summary>
-public class VideoProcessor
+public class VideoProcessor : IDisposable
 {
     private readonly YOROProcessor _yoroProcessor;
     private readonly DepthEstimator _depthEstimator;
+    private readonly int _chunkSize;
+    private bool _disposed = false;
 
-    public VideoProcessor(YOROConfig config)
+    /// <summary>
+    /// Initialize video processor with configuration and chunked processing
+    /// </summary>
+    /// <param name="config">YORO configuration</param>
+    /// <param name="chunkSize">Number of frames to process at once (default: 100)</param>
+    public VideoProcessor(YOROConfig config, int chunkSize = 100)
     {
         _yoroProcessor = new YOROProcessor(config);
         _depthEstimator = new DepthEstimator();
+        _chunkSize = Math.Max(1, chunkSize);
+
+        Console.WriteLine("Using gradient-based depth estimation");
         
         // Initialize FFmpeg binaries if not already available
         // This will automatically download FFmpeg binaries on first use if needed
@@ -39,7 +49,7 @@ public class VideoProcessor
     }
 
     /// <summary>
-    /// Convert a 2D video to 3D SBS format
+    /// Convert a 2D video to 3D SBS format using chunked processing to minimize storage usage
     /// </summary>
     /// <param name="inputPath">Path to input video file</param>
     /// <param name="outputPath">Path to output SBS video file</param>
@@ -50,14 +60,12 @@ public class VideoProcessor
         if (!File.Exists(inputPath))
             throw new FileNotFoundException($"Input video file not found: {inputPath}");
 
-        var tempFramesDir = Path.Combine(Path.GetTempPath(), $"yoro_frames_{Guid.NewGuid():N}");
-        var tempSbsFramesDir = Path.Combine(Path.GetTempPath(), $"yoro_sbs_{Guid.NewGuid():N}");
+        var tempChunksDir = Path.Combine(Path.GetTempPath(), $"yoro_chunks_{Guid.NewGuid():N}");
 
         try
         {
-            // Create temporary directories
-            Directory.CreateDirectory(tempFramesDir);
-            Directory.CreateDirectory(tempSbsFramesDir);
+            // Create temporary directory for chunks
+            Directory.CreateDirectory(tempChunksDir);
 
             Console.WriteLine("Analyzing video...");
             var mediaInfo = await FFmpeg.GetMediaInfo(inputPath);
@@ -69,138 +77,55 @@ public class VideoProcessor
             var height = videoStream.Height;
             
             Console.WriteLine($"Video info: {width}x{height}, {fps:F2} fps, {totalFrames} frames");
+            Console.WriteLine($"Processing in chunks of {_chunkSize} frames to minimize storage usage");
 
-            Console.WriteLine("Estimated size: " +
-                $"{(totalFrames * width * height * 3 / (1024.0 * 1024.0)):F2} MB (uncompressed RGB)");
+            var totalChunks = (int)Math.Ceiling((double)totalFrames / _chunkSize);
+            Console.WriteLine($"Total chunks: {totalChunks}");
 
-            // Step 1: Extract frames from input video
-            Console.WriteLine("Extracting frames...");
-            var frameExtractionConversion = FFmpeg.Conversions.New()
-                .AddParameter($"-i \"{inputPath}\"")
-                .AddParameter($"-vf fps={fps}")
-                .AddParameter($"\"{Path.Combine(tempFramesDir, "frame_%06d.png")}\"")
-                .SetOverwriteOutput(true);
-            await frameExtractionConversion.Start();
-
-            // Step 2: Process each frame through 2D-to-3D conversion
-            var frameFiles = Directory.GetFiles(tempFramesDir, "frame_*.png")
-                .OrderBy(f => f)
-                .ToArray();
-
-            Console.WriteLine($"Processing {frameFiles.Length} frames with multi-threading...");
-
-            // Create camera matrices (same as in ConvertImageAsync)
-            var viewMatrixRight = CreateViewMatrix(0.032f, 0); // IPD = 64mm, half = 32mm
+            // Create camera matrices (same as before)
+            var viewMatrixRight = CreateViewMatrix(0.032f, 0); 
             var viewMatrixLeft = CreateViewMatrix(-0.032f, 0);
             var projectionMatrix = CreateProjectionMatrix(90.0f, (float)width / height, 0.1f, 1000.0f);
 
-            // Use parallel processing for frame conversion
-            var processedCount = 0;
-            var parallelOptions = new ParallelOptions
-            {
-                MaxDegreeOfParallelism = Environment.ProcessorCount // Use all available cores
-            };
+            var processedChunks = new List<string>();
 
-            await Task.Run(() =>
+            // Process video in chunks
+            for (int chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++)
             {
-                Parallel.For(0, frameFiles.Length, parallelOptions, i =>
+                var startFrame = chunkIndex * _chunkSize;
+                var endFrame = Math.Min(startFrame + _chunkSize - 1, totalFrames - 1);
+                var framesInChunk = endFrame - startFrame + 1;
+                
+                Console.WriteLine($"Processing chunk {chunkIndex + 1}/{totalChunks} (frames {startFrame}-{endFrame})");
+
+                var chunkResult = await ProcessVideoChunkAsync(
+                    inputPath, tempChunksDir, chunkIndex,
+                    startFrame, framesInChunk, fps,
+                    viewMatrixRight, projectionMatrix, viewMatrixLeft, projectionMatrix,
+                    width, height);
+
+                if (chunkResult != null)
                 {
-                    var frameFile = frameFiles[i];
-                    var sbsFrameFile = Path.Combine(tempSbsFramesDir, $"sbs_frame_{i:D6}.png");
-
-                    // Process frame using the same logic as ConvertImageAsync
-                    ProcessSingleFrameAsync(frameFile, sbsFrameFile, 
-                        viewMatrixRight, projectionMatrix, viewMatrixLeft, projectionMatrix).Wait();
-
-                    // Thread-safe progress reporting
-                    var currentCount = Interlocked.Increment(ref processedCount);
-                    var progressValue = (double)currentCount / frameFiles.Length * 0.8; // 80% for frame processing
-                    progress?.Report(progressValue);
-
-                    if (currentCount % 100 == 0 || currentCount == frameFiles.Length)
-                    {
-                        Console.WriteLine($"Processed {currentCount}/{frameFiles.Length} frames");
-                    }
-                });
-            });
-
-            // Step 3: Reassemble processed frames into SBS video
-            Console.WriteLine("Assembling SBS video...");
-            var sbsVideoTemp = Path.Combine(Path.GetTempPath(), $"yoro_video_temp_{Guid.NewGuid():N}.mp4");
-            
-            // Check if we have any processed frames
-            var sbsFrameFiles = Directory.GetFiles(tempSbsFramesDir, "sbs_frame_*.png")
-                .OrderBy(f => f)
-                .ToArray();
-            
-            if (sbsFrameFiles.Length == 0)
-            {
-                throw new InvalidOperationException("No processed frames found");
-            }
-            
-            Console.WriteLine($"Assembling {sbsFrameFiles.Length} SBS frames into video...");
-            
-            try
-            {
-                // Use Xabe.FFmpeg to create video from frames
-                var videoAssemblyConversion = FFmpeg.Conversions.New()
-                    .AddParameter($"-framerate {fps}")
-                    .AddParameter($"-i \"{Path.Combine(tempSbsFramesDir, "sbs_frame_%06d.png")}\"")
-                    .AddParameter("-c:v libx265")
-                    .AddParameter("-pix_fmt yuv420p")
-                    .AddParameter("-crf 23")
-                    .SetOutput(sbsVideoTemp)
-                    .SetOverwriteOutput(true);
-                    
-                await videoAssemblyConversion.Start();
-                    
-                if (!File.Exists(sbsVideoTemp))
-                {
-                    throw new FileNotFoundException($"SBS video was not created at: {sbsVideoTemp}");
+                    processedChunks.Add(chunkResult);
                 }
-                
-                Console.WriteLine($"SBS video created: {sbsVideoTemp} ({new FileInfo(sbsVideoTemp).Length} bytes)");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"FFmpeg assembly error: {ex.Message}");
-                throw new InvalidOperationException($"Failed to assemble video: {ex.Message}");
+
+                // Report progress
+                var chunkProgress = (double)(chunkIndex + 1) / totalChunks * 0.9; // 90% for chunk processing
+                progress?.Report(chunkProgress);
             }
 
-            progress?.Report(0.9); // 90% complete
+            if (processedChunks.Count == 0)
+            {
+                throw new InvalidOperationException("No chunks were processed successfully");
+            }
 
-            // Step 4: Add audio from original video if it exists
-            Console.WriteLine("Adding audio track...");
-            if (mediaInfo.AudioStreams.Any())
-            {
-                var audioMergeConversion = FFmpeg.Conversions.New()
-                    .AddParameter($"-i \"{sbsVideoTemp}\"")
-                    .AddParameter($"-i \"{inputPath}\"")
-                    .AddParameter("-c:v copy")
-                    .AddParameter("-c:a aac")
-                    .AddParameter("-map 0:v:0")
-                    .AddParameter("-map 1:a:0")
-                    .SetOutput(outputPath)
-                    .SetOverwriteOutput(true);
-                    
-                await audioMergeConversion.Start();
-                
-                // Clean up temporary video file
-                if (File.Exists(sbsVideoTemp))
-                    File.Delete(sbsVideoTemp);
-            }
-            else
-            {
-                // No audio, just copy the video
-                if (File.Exists(sbsVideoTemp))
-                    File.Move(sbsVideoTemp, outputPath);
-                else
-                    throw new FileNotFoundException("Temporary SBS video file not found");
-            }
+            // Combine all chunks into final video
+            Console.WriteLine("Combining chunks into final video...");
+            await CombineVideoChunksAsync(processedChunks, outputPath, mediaInfo);
 
             progress?.Report(1.0); // 100% complete
             
-            Console.WriteLine($"Processed {frameFiles.Length} frames into SBS video");
+            Console.WriteLine($"Successfully processed {totalFrames} frames in {totalChunks} chunks");
             Console.WriteLine($"Output saved to: {outputPath}");
             return true;
         }
@@ -211,29 +136,8 @@ public class VideoProcessor
         }
         finally
         {
-            // Clean up temporary directories and files
-            try
-            {
-                if (Directory.Exists(tempFramesDir))
-                    Directory.Delete(tempFramesDir, true);
-                if (Directory.Exists(tempSbsFramesDir))
-                    Directory.Delete(tempSbsFramesDir, true);
-                
-                // Clean up any remaining temp video files
-                var tempVideoFiles = Directory.GetFiles(Path.GetTempPath(), "yoro_video_temp_*.mp4");
-                foreach (var tempFile in tempVideoFiles)
-                {
-                    try
-                    {
-                        File.Delete(tempFile);
-                    }
-                    catch { /* Ignore individual file cleanup errors */ }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Warning: Failed to clean up temporary files: {ex.Message}");
-            }
+            // Clean up temporary files
+            await CleanupTempDirectoryAsync(tempChunksDir);
         }
     }
 
@@ -324,6 +228,235 @@ public class VideoProcessor
         await sbsImage.SaveAsync(outputFramePath);
     }
 
+    /// <summary>
+    /// Process a single video chunk
+    /// </summary>
+    private async Task<string?> ProcessVideoChunkAsync(
+        string inputVideoPath, string tempDir, int chunkIndex,
+        int startFrame, int frameCount, double fps,
+        Matrix4x4 viewMatrixRight, Matrix4x4 projectionMatrixRight,
+        Matrix4x4 viewMatrixLeft, Matrix4x4 projectionMatrixLeft,
+        int width, int height)
+    {
+        var chunkFramesDir = Path.Combine(tempDir, $"chunk_{chunkIndex}_frames");
+        var chunkSbsFramesDir = Path.Combine(tempDir, $"chunk_{chunkIndex}_sbs");
+        var chunkVideoPath = Path.Combine(tempDir, $"chunk_{chunkIndex}.mp4");
+
+        try
+        {
+            Directory.CreateDirectory(chunkFramesDir);
+            Directory.CreateDirectory(chunkSbsFramesDir);
+
+            // Extract frames for this chunk only
+            var startTime = TimeSpan.FromSeconds(startFrame / fps);
+            var duration = TimeSpan.FromSeconds(frameCount / fps);
+
+            var frameExtractionConversion = FFmpeg.Conversions.New()
+                .AddParameter($"-i \"{inputVideoPath}\"")
+                .AddParameter($"-ss {startTime.TotalSeconds:F3}")
+                .AddParameter($"-t {duration.TotalSeconds:F3}")
+                .AddParameter($"-vf fps={fps}")
+                .AddParameter($"\"{Path.Combine(chunkFramesDir, "frame_%06d.png")}\"")
+                .SetOverwriteOutput(true);
+            
+            await frameExtractionConversion.Start();
+
+            // Get extracted frames
+            var frameFiles = Directory.GetFiles(chunkFramesDir, "frame_*.png")
+                .OrderBy(f => f)
+                .ToArray();
+
+            if (frameFiles.Length == 0)
+            {
+                Console.WriteLine($"Warning: No frames extracted for chunk {chunkIndex}");
+                return null;
+            }
+
+            Console.WriteLine($"  Chunk {chunkIndex}: Processing {frameFiles.Length} frames");
+
+            // Process frames in parallel
+            var parallelOptions = new ParallelOptions
+            {
+                MaxDegreeOfParallelism = Environment.ProcessorCount
+            };
+
+            await Task.Run(() =>
+            {
+                Parallel.For(0, frameFiles.Length, parallelOptions, i =>
+                {
+                    var frameFile = frameFiles[i];
+                    var sbsFrameFile = Path.Combine(chunkSbsFramesDir, $"sbs_frame_{i:D6}.png");
+
+                    ProcessSingleFrameAsync(frameFile, sbsFrameFile,
+                        viewMatrixRight, projectionMatrixRight, viewMatrixLeft, projectionMatrixLeft).Wait();
+                });
+            });
+
+            // Create chunk video from processed frames
+            var sbsFrameFiles = Directory.GetFiles(chunkSbsFramesDir, "sbs_frame_*.png")
+                .OrderBy(f => f)
+                .ToArray();
+
+            if (sbsFrameFiles.Length > 0)
+            {
+                var videoAssemblyConversion = FFmpeg.Conversions.New()
+                    .AddParameter($"-framerate {fps}")
+                    .AddParameter($"-i \"{Path.Combine(chunkSbsFramesDir, "sbs_frame_%06d.png")}\"")
+                    .AddParameter("-c:v libx265")
+                    .AddParameter("-pix_fmt yuv420p")
+                    .AddParameter("-crf 23")
+                    .SetOutput(chunkVideoPath)
+                    .SetOverwriteOutput(true);
+
+                await videoAssemblyConversion.Start();
+
+                if (File.Exists(chunkVideoPath))
+                {
+                    Console.WriteLine($"  Chunk {chunkIndex}: Created video ({new FileInfo(chunkVideoPath).Length / (1024 * 1024):F2} MB)");
+                }
+            }
+
+            return File.Exists(chunkVideoPath) ? chunkVideoPath : null;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error processing chunk {chunkIndex}: {ex.Message}");
+            return null;
+        }
+        finally
+        {
+            // Clean up chunk frame directories immediately to save space
+            try
+            {
+                if (Directory.Exists(chunkFramesDir))
+                    Directory.Delete(chunkFramesDir, true);
+                if (Directory.Exists(chunkSbsFramesDir))
+                    Directory.Delete(chunkSbsFramesDir, true);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Warning: Failed to clean up chunk {chunkIndex} frames: {ex.Message}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Combine multiple video chunks into a single output video
+    /// </summary>
+    private async Task CombineVideoChunksAsync(List<string> chunkPaths, string outputPath, IMediaInfo originalMediaInfo)
+    {
+        if (chunkPaths.Count == 1)
+        {
+            // Single chunk, just add audio if needed
+            await AddAudioToVideoAsync(chunkPaths[0], outputPath, originalMediaInfo);
+            return;
+        }
+
+        // Create concat file for FFmpeg
+        var concatFilePath = Path.Combine(Path.GetTempPath(), $"yoro_concat_{Guid.NewGuid():N}.txt");
+        
+        try
+        {
+            // Write concat file
+            var concatContent = string.Join(Environment.NewLine, 
+                chunkPaths.Select(path => $"file '{path.Replace("\\", "/")}'")); // Use forward slashes for FFmpeg
+            
+            await File.WriteAllTextAsync(concatFilePath, concatContent);
+
+            // Combine video chunks
+            var tempCombinedPath = Path.Combine(Path.GetTempPath(), $"yoro_combined_{Guid.NewGuid():N}.mp4");
+            
+            var concatConversion = FFmpeg.Conversions.New()
+                .AddParameter($"-f concat")
+                .AddParameter($"-safe 0")
+                .AddParameter($"-i \"{concatFilePath}\"")
+                .AddParameter("-c copy")
+                .SetOutput(tempCombinedPath)
+                .SetOverwriteOutput(true);
+
+            await concatConversion.Start();
+
+            if (!File.Exists(tempCombinedPath))
+            {
+                throw new InvalidOperationException("Failed to combine video chunks");
+            }
+
+            // Add audio from original video
+            await AddAudioToVideoAsync(tempCombinedPath, outputPath, originalMediaInfo);
+
+            // Clean up temporary combined file
+            if (File.Exists(tempCombinedPath))
+                File.Delete(tempCombinedPath);
+        }
+        finally
+        {
+            // Clean up concat file
+            if (File.Exists(concatFilePath))
+            {
+                try { File.Delete(concatFilePath); } catch { }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Add audio track from original video to processed video
+    /// </summary>
+    private async Task AddAudioToVideoAsync(string videoPath, string outputPath, IMediaInfo originalMediaInfo)
+    {
+        if (originalMediaInfo.AudioStreams.Any())
+        {
+            // Get the original video path from the media info
+            var originalVideoPath = originalMediaInfo.Path;
+            
+            var audioMergeConversion = FFmpeg.Conversions.New()
+                .AddParameter($"-i \"{videoPath}\"")
+                .AddParameter($"-i \"{originalVideoPath}\"")
+                .AddParameter("-c:v copy")
+                .AddParameter("-c:a aac")
+                .AddParameter("-map 0:v:0")
+                .AddParameter("-map 1:a:0")
+                .SetOutput(outputPath)
+                .SetOverwriteOutput(true);
+
+            await audioMergeConversion.Start();
+        }
+        else
+        {
+            // No audio, just copy the video
+            File.Copy(videoPath, outputPath, true);
+        }
+    }
+
+    /// <summary>
+    /// Clean up temporary directory and all chunk files
+    /// </summary>
+    private async Task CleanupTempDirectoryAsync(string tempDir)
+    {
+        try
+        {
+            if (Directory.Exists(tempDir))
+            {
+                // Delete chunk videos first
+                var chunkVideos = Directory.GetFiles(tempDir, "chunk_*.mp4");
+                foreach (var chunkVideo in chunkVideos)
+                {
+                    try { File.Delete(chunkVideo); } catch { }
+                }
+
+                // Wait a bit for file handles to be released
+                await Task.Delay(100);
+
+                // Delete the entire directory
+                Directory.Delete(tempDir, true);
+                Console.WriteLine("Cleaned up temporary files");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Warning: Failed to clean up temporary directory {tempDir}: {ex.Message}");
+        }
+    }
+
     private Matrix4x4 CreateViewMatrix(float eyeOffsetX, float eyeOffsetY)
     {
         return Matrix4x4.CreateTranslation(eyeOffsetX, eyeOffsetY, 0);
@@ -333,5 +466,14 @@ public class VideoProcessor
     {
         var fovRadians = fovDegrees * MathF.PI / 180.0f;
         return Matrix4x4.CreatePerspectiveFieldOfView(fovRadians, aspectRatio, nearPlane, farPlane);
+    }
+
+    public void Dispose()
+    {
+        if (!_disposed)
+        {
+            // No ONNX estimator to dispose in this version
+            _disposed = true;
+        }
     }
 }
