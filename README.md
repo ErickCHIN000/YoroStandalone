@@ -2,12 +2,27 @@
 
 This is a standalone .NET library that converts 2D input videos/images to 3D Side-by-Side (SBS) format without Unity dependencies. It's based on the YORO (You Only Render Once) VR rendering optimization technique. [YORO-VR](https://github.com/YORO-VR/YORO-VR)
 
+## ✨ New Features (v2.0)
+
+### 🧠 Advanced Depth Estimation with Depth-Anything V2
+- **ONNX-based depth estimation** using [Depth-Anything-ONNX v2.0.0](https://github.com/fabio-sim/Depth-Anything-ONNX/releases/tag/v2.0.0)
+- **Automatic model download** - Downloads the appropriate ViT model (S/B/L) on first use
+- **Fallback support** - Gracefully falls back to gradient-based estimation if ONNX fails
+- **GPU acceleration** - Uses CUDA when available, CPU otherwise
+
+### 🎬 Storage-Efficient Video Processing  
+- **Chunked processing** - Processes videos in small segments (default: 100 frames)
+- **Massive storage savings** - Avoids extracting all frames at once (200GB+ for 4K videos)
+- **Memory efficient** - Processes chunks sequentially and cleans up immediately
+- **Progress tracking** - Real-time progress reporting during conversion
+
 ## Features
 
 - Convert 2D images to 3D SBS format
 - Support for Quality and Performance processing modes
 - Configurable reprojection scales for performance optimization
-- Built-in depth estimation using gradient-based algorithms
+- Advanced depth estimation using state-of-the-art ML models
+- Storage-efficient video processing for large files
 - Console application demonstrating usage
 - No Unity dependencies - pure .NET implementation
 
@@ -16,8 +31,10 @@ This is a standalone .NET library that converts 2D input videos/images to 3D Sid
 ### YORO.Core Library
 The main library containing:
 - `YOROProcessor`: Core algorithm for depth-based reprojection
-- `VideoProcessor`: High-level interface for image/video processing
-- `DepthEstimator`: Simple depth estimation from monocular images
+- `VideoProcessor`: High-level interface for image/video processing with chunked video support
+- `OnnxDepthEstimator`: Advanced ML-based depth estimation using Depth-Anything V2
+- `DepthEstimator`: Fallback gradient-based depth estimation
+- `DepthAnythingModelDownloader`: Automatic ONNX model management
 - `YOROConfig`: Configuration options for processing modes
 
 ### YORO.ConsoleApp
@@ -25,10 +42,11 @@ Sample console application demonstrating the library usage.
 
 ## How It Works
 
-1. **Depth Estimation**: Estimates depth from a single 2D image using gradient-based methods
-2. **Pixel Reprojection**: Calculates pixel shifts based on depth and camera matrices
-3. **Gap Filling**: Interpolates missing pixels in the reprojected image
-4. **SBS Generation**: Combines original and reprojected images into side-by-side format
+1. **Advanced Depth Estimation**: Uses Depth-Anything V2 ONNX models for state-of-the-art monocular depth estimation
+2. **Chunked Video Processing**: Processes large videos in small segments to minimize storage usage
+3. **Pixel Reprojection**: Calculates pixel shifts based on depth and camera matrices
+4. **Gap Filling**: Interpolates missing pixels in the reprojected image
+5. **SBS Generation**: Combines original and reprojected images into side-by-side format
 
 ## Processing Modes
 
@@ -69,18 +87,36 @@ var config = new YOROConfig
     ReprojectionScale = YOROScale.Half
 };
 
-// Create processor
-var processor = new VideoProcessor(config);
+// Create processor with ONNX depth estimation
+using var processor = await VideoProcessor.CreateAsync(
+    config, 
+    useOnnxDepth: true,    // Use Depth-Anything V2 model
+    modelSize: "vitb",     // ViT-Base model (vitb, vits, vitl)
+    chunkSize: 100         // Process 100 frames at a time
+);
 
 // Convert image
 await processor.ConvertImageAsync("input.jpg", "output_sbs.jpg");
+
+// Convert video (storage efficient)
+await processor.ConvertVideoAsync("input.mp4", "output_sbs.mp4");
 ```
 
 ## Dependencies
 
+- **Microsoft.ML.OnnxRuntime**: For ONNX model inference (Depth-Anything V2)
 - **Xabe.FFmpeg**: For video processing capabilities (requires FFmpeg binaries)
 - **SixLabors.ImageSharp**: For image manipulation
 - **System.Numerics**: For matrix operations
+
+### ONNX Model Requirements
+
+This application automatically downloads Depth-Anything V2 ONNX models on first use:
+
+1. **Automatic download**: Models are downloaded from the official Depth-Anything-ONNX v2.0.0 release
+2. **Model selection**: Choose from ViT-Small (~100MB), ViT-Base (~290MB), or ViT-Large (~1GB)
+3. **Local caching**: Models are cached locally in the `models/` directory
+4. **GPU acceleration**: CUDA support when available, CPU fallback otherwise
 
 ### FFmpeg Binary Requirements
 
@@ -93,6 +129,20 @@ This application uses Xabe.FFmpeg which requires FFmpeg binaries to be available
 For most users, the auto-download feature will handle this automatically.
 
 ## Performance Improvements
+
+### Advanced Depth Estimation
+- **State-of-the-art accuracy**: Uses Depth-Anything V2 for superior depth estimation
+- **Multiple model sizes**: Choose speed vs. accuracy tradeoff
+  - ViT-Small: ~13ms inference on RTX4080 (fastest)
+  - ViT-Base: ~29ms inference on RTX4080 (balanced)
+  - ViT-Large: ~83ms inference on RTX4080 (most accurate)
+
+### Storage-Efficient Video Processing
+- **Chunked processing**: Process videos in small segments (default: 100 frames)
+- **Minimal storage footprint**: Avoids extracting all frames simultaneously
+- **Example**: 4K 120fps 208s video (25,000 frames)
+  - **Old approach**: ~200GB temporary storage required
+  - **New approach**: ~2GB temporary storage (100x reduction)
 
 ### Multi-Threading Support
 - Frame processing now uses parallel processing with `Parallel.For`
@@ -116,9 +166,10 @@ Both Quality and Performance modes now benefit from multi-threading:
 
 ## Limitations
 
-- Depth estimation is simplified (gradient-based) - production use would benefit from ML-based depth estimation
-- Video processing is currently basic - frame-by-frame conversion
-- No real-time processing optimization
+- Video processing requires FFmpeg binaries
+- ONNX models require significant GPU memory for optimal performance
+- Large videos may take considerable time to process even with chunking
+- Real-time processing not yet optimized
 
 ## Building
 
@@ -137,19 +188,22 @@ dotnet run
 
 ## Performance Notes
 
-- Quality mode: ~2-5x slower but better visual results
-- Performance mode with 4x scale: ~4x faster than quality mode
-- Memory usage scales with image resolution and processing mode
+- **ONNX Depth Estimation**: Quality varies by model size, with ViT-Large providing best results
+- **Chunked Processing**: Dramatically reduces storage requirements for large video files
+- **Quality mode**: Uses full resolution with ONNX depth estimation for best results  
+- **Performance mode**: Uses reduced resolution processing for faster conversion
+- **Memory usage**: Scales with chunk size and video resolution
 
 ## Algorithm Details
 
-The core algorithm implements the YORO technique:
+The core algorithm implements the YORO technique with advanced depth estimation:
 
-1. **Matrix Setup**: Calculate view and projection matrices for left/right eyes
-2. **Depth-based Shift Calculation**: For each pixel, calculate where it should appear in the target eye view
-3. **Reprojection**: Map pixels from source to target positions
-4. **Gap Filling**: Fill gaps using interpolation techniques
-5. **SBS Composition**: Combine left and right eye views side-by-side
+1. **Model-based Depth Estimation**: Uses Depth-Anything V2 ONNX models for accurate depth prediction
+2. **Matrix Setup**: Calculate view and projection matrices for left/right eyes
+3. **Chunked Video Processing**: Process large videos in manageable segments to minimize storage
+4. **Depth-based Shift Calculation**: For each pixel, calculate where it should appear in the target eye view
+5. **Reprojection**: Map pixels from source to target positions
+6. **Gap Filling**: Fill gaps using interpolation techniques
+7. **SBS Composition**: Combine left and right eye views side-by-side
 
-
-This approach allows generating stereo views from a single camera input, enabling VR content creation from traditional 2D sources.
+This approach enables generating high-quality stereo views from single camera input, while efficiently handling large video files that would otherwise require prohibitive amounts of storage space during processing.
