@@ -35,32 +35,24 @@
           "System.Threading": "4.0.11"
         }
       },
-      "Microsoft.ML.OnnxRuntime/1.19.2": {
+      "Microsoft.ML.OnnxRuntime.Gpu/1.21.0": {
         "dependencies": {
-          "Microsoft.ML.OnnxRuntime.Managed": "1.19.2"
+          "Microsoft.ML.OnnxRuntime.Gpu.Linux": "1.21.0",
+          "Microsoft.ML.OnnxRuntime.Gpu.Windows": "1.21.0",
+          "Microsoft.ML.OnnxRuntime.Managed": "1.21.0"
+        }
+      },
+      "Microsoft.ML.OnnxRuntime.Gpu.Linux/1.21.0": {
+        "dependencies": {
+          "Microsoft.ML.OnnxRuntime.Managed": "1.21.0"
         },
         "runtimeTargets": {
-          "runtimes/android/native/onnxruntime.aar": {
-            "rid": "android",
-            "assetType": "native",
-            "fileVersion": "0.0.0.0"
-          },
-          "runtimes/ios/native/onnxruntime.xcframework.zip": {
-            "rid": "ios",
-            "assetType": "native",
-            "fileVersion": "0.0.0.0"
-          },
-          "runtimes/linux-arm64/native/libonnxruntime.so": {
-            "rid": "linux-arm64",
-            "assetType": "native",
-            "fileVersion": "0.0.0.0"
-          },
-          "runtimes/linux-arm64/native/libonnxruntime_providers_shared.so": {
-            "rid": "linux-arm64",
-            "assetType": "native",
-            "fileVersion": "0.0.0.0"
-          },
           "runtimes/linux-x64/native/libonnxruntime.so": {
+            "rid": "linux-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-x64/native/libonnxruntime_providers_cuda.so": {
             "rid": "linux-x64",
             "assetType": "native",
             "fileVersion": "0.0.0.0"
@@ -70,42 +62,34 @@
             "assetType": "native",
             "fileVersion": "0.0.0.0"
           },
-          "runtimes/osx-arm64/native/libonnxruntime.dylib": {
-            "rid": "osx-arm64",
+          "runtimes/linux-x64/native/libonnxruntime_providers_tensorrt.so": {
+            "rid": "linux-x64",
             "assetType": "native",
             "fileVersion": "0.0.0.0"
-          },
-          "runtimes/osx-x64/native/libonnxruntime.dylib": {
-            "rid": "osx-x64",
-            "assetType": "native",
-            "fileVersion": "0.0.0.0"
-          },
-          "runtimes/win-arm64/native/onnxruntime.dll": {
-            "rid": "win-arm64",
-            "assetType": "native",
-            "fileVersion": "0.0.0.0"
-          },
-          "runtimes/win-arm64/native/onnxruntime.lib": {
-            "rid": "win-arm64",
-            "assetType": "native",
-            "fileVersion": "0.0.0.0"
-          },
-          "runtimes/win-arm64/native/onnxruntime_providers_shared.dll": {
-            "rid": "win-arm64",
-            "assetType": "native",
-            "fileVersion": "0.0.0.0"
-          },
-          "runtimes/win-arm64/native/onnxruntime_providers_shared.lib": {
-            "rid": "win-arm64",
-            "assetType": "native",
-            "fileVersion": "0.0.0.0"
-          },
+          }
+        }
+      },
+      "Microsoft.ML.OnnxRuntime.Gpu.Windows/1.21.0": {
+        "dependencies": {
+          "Microsoft.ML.OnnxRuntime.Managed": "1.21.0"
+        },
+        "runtimeTargets": {
           "runtimes/win-x64/native/onnxruntime.dll": {
             "rid": "win-x64",
             "assetType": "native",
             "fileVersion": "0.0.0.0"
           },
           "runtimes/win-x64/native/onnxruntime.lib": {
+            "rid": "win-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/win-x64/native/onnxruntime_providers_cuda.dll": {
+            "rid": "win-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/win-x64/native/onnxruntime_providers_cuda.lib": {
             "rid": "win-x64",
             "assetType": "native",
             "fileVersion": "0.0.0.0"
@@ -120,36 +104,27 @@
             "assetType": "native",
             "fileVersion": "0.0.0.0"
           },
-          "runtimes/win-x86/native/onnxruntime.dll": {
-            "rid": "win-x86",
+          "runtimes/win-x64/native/onnxruntime_providers_tensorrt.dll": {
+            "rid": "win-x64",
             "assetType": "native",
             "fileVersion": "0.0.0.0"
           },
-          "runtimes/win-x86/native/onnxruntime.lib": {
-            "rid": "win-x86",
-            "assetType": "native",
-            "fileVersion": "0.0.0.0"
-          },
-          "runtimes/win-x86/native/onnxruntime_providers_shared.dll": {
-            "rid": "win-x86",
-            "assetType": "native",
-            "fileVersion": "0.0.0.0"
-          },
-          "runtimes/win-x86/native/onnxruntime_providers_shared.lib": {
-            "rid": "win-x86",
+          "runtimes/win-x64/native/onnxruntime_providers_tensorrt.lib": {
+            "rid": "win-x64",
             "assetType": "native",
             "fileVersion": "0.0.0.0"
           }
         }
       },
-      "Microsoft.ML.OnnxRuntime.Managed/1.19.2": {
+      "Microsoft.ML.OnnxRuntime.Managed/1.21.0": {
         "dependencies": {
-          "System.Memory": "4.5.5"
+          "System.Memory": "4.5.5",
+          "System.Numerics.Tensors": "9.0.0"
         },
         "runtime": {
-          "lib/net6.0/Microsoft.ML.OnnxRuntime.dll": {
-            "assemblyVersion": "1.19.2.0",
-            "fileVersion": "1.19.2.0"
+          "lib/net8.0/Microsoft.ML.OnnxRuntime.dll": {
+            "assemblyVersion": "1.21.0.0",
+            "fileVersion": "1.21.0.0"
           }
         }
       },
@@ -299,6 +274,14 @@
         }
       },
       "System.Memory/4.5.5": {},
+      "System.Numerics.Tensors/9.0.0": {
+        "runtime": {
+          "lib/net8.0/System.Numerics.Tensors.dll": {
+            "assemblyVersion": "9.0.0.0",
+            "fileVersion": "9.0.24.52809"
+          }
+        }
+      },
       "System.Numerics.Vectors/4.6.1": {},
       "System.ObjectModel/4.0.12": {
         "dependencies": {
@@ -512,7 +495,7 @@
       },
       "YORO.Core/1.0.0": {
         "dependencies": {
-          "Microsoft.ML.OnnxRuntime": "1.19.2",
+          "Microsoft.ML.OnnxRuntime.Gpu": "1.21.0",
           "SixLabors.ImageSharp": "3.1.11",
           "System.Numerics.Vectors": "4.6.1",
           "Xabe.FFmpeg": "5.2.6",
@@ -537,19 +520,33 @@
       "path": "microsoft.csharp/4.0.1",
       "hashPath": "microsoft.csharp.4.0.1.nupkg.sha512"
     },
-    "Microsoft.ML.OnnxRuntime/1.19.2": {
+    "Microsoft.ML.OnnxRuntime.Gpu/1.21.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-V1v8BebP1ZEFcZf2hGWuN7S5jAqmE2zBOq9RbGebZi2jd/aTZpg4PiTDtpQoGAIhZg4EPQUsHAyOJxwue44pBA==",
-      "path": "microsoft.ml.onnxruntime/1.19.2",
-      "hashPath": "microsoft.ml.onnxruntime.1.19.2.nupkg.sha512"
+      "sha512": "sha512-JWs0FTw5O/6ZMyvqfTZHkNohyTQSK49WAPYl6MgYA+Wmyp+wxD5ThyxoHTWyjLJKGpnHxmAU5tGfr0jrl30Cmg==",
+      "path": "microsoft.ml.onnxruntime.gpu/1.21.0",
+      "hashPath": "microsoft.ml.onnxruntime.gpu.1.21.0.nupkg.sha512"
     },
-    "Microsoft.ML.OnnxRuntime.Managed/1.19.2": {
+    "Microsoft.ML.OnnxRuntime.Gpu.Linux/1.21.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-4oNu7/L1ar3PmXNvAnary0/MbyqNkKDmisrG54QVbFoSuW1GNw1CcWDBrlYHbafo41p4/cnVQ3lF/IHuSm8quQ==",
-      "path": "microsoft.ml.onnxruntime.managed/1.19.2",
-      "hashPath": "microsoft.ml.onnxruntime.managed.1.19.2.nupkg.sha512"
+      "sha512": "sha512-hF3vrn8nOq/kyedjKEULdAkfgHXrmXTbpNwkDq1DnIZoZOSxmpVkD4JsO+eLlVjvs4IF52u7ROhqq79RJg66zg==",
+      "path": "microsoft.ml.onnxruntime.gpu.linux/1.21.0",
+      "hashPath": "microsoft.ml.onnxruntime.gpu.linux.1.21.0.nupkg.sha512"
+    },
+    "Microsoft.ML.OnnxRuntime.Gpu.Windows/1.21.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-dB0RmUmJnmHdMSb7CMboMvMldeOLZ4iENuE9XYu6n8GtxsmW0kt93+Fym5tmcLc+XGanzC7HMGLlnQ7DVFysIg==",
+      "path": "microsoft.ml.onnxruntime.gpu.windows/1.21.0",
+      "hashPath": "microsoft.ml.onnxruntime.gpu.windows.1.21.0.nupkg.sha512"
+    },
+    "Microsoft.ML.OnnxRuntime.Managed/1.21.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-Pp4PFhCELCMO8dWNbGK9Ge+Zh09xPVknmjvAgXIrLsfAgmv1It5aATP3UJTG/GBVzcvshDL/UI+KV9O8YQzkkQ==",
+      "path": "microsoft.ml.onnxruntime.managed/1.21.0",
+      "hashPath": "microsoft.ml.onnxruntime.managed.1.21.0.nupkg.sha512"
     },
     "Microsoft.NETCore.Platforms/1.0.1": {
       "type": "package",
@@ -655,6 +652,13 @@
       "sha512": "sha512-XIWiDvKPXaTveaB7HVganDlOCRoj03l+jrwNvcge/t8vhGYKvqV+dMv6G4SAX2NoNmN0wZfVPTAlFwZcZvVOUw==",
       "path": "system.memory/4.5.5",
       "hashPath": "system.memory.4.5.5.nupkg.sha512"
+    },
+    "System.Numerics.Tensors/9.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-hyJB4UlpAi19Xr9AXzu2NuagKC4lPfHObNMEAA0HmqFz2rX7wKgzeYzO/jM/eBHDhnUGFFEjk5cOoJaxqg5J4A==",
+      "path": "system.numerics.tensors/9.0.0",
+      "hashPath": "system.numerics.tensors.9.0.0.nupkg.sha512"
     },
     "System.Numerics.Vectors/4.6.1": {
       "type": "package",

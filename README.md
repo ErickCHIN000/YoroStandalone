@@ -9,6 +9,7 @@ This is a standalone .NET library that converts 2D input videos/images to 3D Sid
 - **Automatic model download** - Downloads the appropriate ViT model (S/B/L) on first use
 - **Fallback support** - Gracefully falls back to gradient-based estimation if ONNX fails
 - **GPU acceleration** - Uses CUDA when available, CPU otherwise
+- **CUDA 12.8/12.9 Support** - Compatible with CUDA 12.8, 12.9 and later versions for optimal GPU performance
 
 ### 🎬 Storage-Efficient Video Processing  
 - **Chunked processing** - Processes videos in small segments (default: 100 frames)
@@ -102,9 +103,22 @@ await processor.ConvertImageAsync("input.jpg", "output_sbs.jpg");
 await processor.ConvertVideoAsync("input.mp4", "output_sbs.mp4");
 ```
 
+## Installation Requirements
+
+### CUDA 12.8/12.9 GPU Support (Optional)
+
+For optimal GPU performance, ensure the following are installed:
+
+1. **NVIDIA GPU**: Compatible graphics card with CUDA Compute Capability 3.5+
+2. **NVIDIA CUDA Toolkit 12.8 or 12.9**: Download from [NVIDIA Developer](https://developer.nvidia.com/cuda-downloads)
+3. **cuDNN Library**: Compatible with CUDA 12.x (usually included with CUDA toolkit)
+4. **NVIDIA Graphics Drivers**: Latest drivers supporting CUDA 12.x
+
+The application will automatically detect CUDA availability and fall back to CPU processing if GPU acceleration is not available.
+
 ## Dependencies
 
-- **Microsoft.ML.OnnxRuntime**: For ONNX model inference (Depth-Anything V2)
+- **Microsoft.ML.OnnxRuntime.Gpu 1.21.0**: For ONNX model inference with CUDA 12.8/12.9 support
 - **Xabe.FFmpeg**: For video processing capabilities (requires FFmpeg binaries)
 - **SixLabors.ImageSharp**: For image manipulation
 - **System.Numerics**: For matrix operations
@@ -116,7 +130,7 @@ This application automatically downloads Depth-Anything V2 ONNX models on first 
 1. **Automatic download**: Models are downloaded from the official Depth-Anything-ONNX v2.0.0 release
 2. **Model selection**: Choose from ViT-Small (~100MB), ViT-Base (~290MB), or ViT-Large (~1GB)
 3. **Local caching**: Models are cached locally in the `models/` directory
-4. **GPU acceleration**: CUDA support when available, CPU fallback otherwise
+4. **GPU acceleration**: CUDA 12.8/12.9+ support with automatic fallback to CPU when GPU unavailable
 
 ### FFmpeg Binary Requirements
 
