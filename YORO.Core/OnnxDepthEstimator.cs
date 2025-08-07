@@ -17,7 +17,35 @@ public class OnnxDepthEstimator : IDisposable
     private readonly string _outputName;
     private readonly int _inputHeight = 518;
     private readonly int _inputWidth = 518;
+    private readonly bool _isUsingCuda;
     private bool _disposed = false;
+
+    /// <summary>
+    /// Get information about available ONNX Runtime execution providers
+    /// </summary>
+    /// <returns>Information about CUDA availability and version support</returns>
+    public static string GetExecutionProviderInfo()
+    {
+        var info = new System.Text.StringBuilder();
+        info.AppendLine("ONNX Runtime Execution Provider Information:");
+        info.AppendLine($"ONNX Runtime Version: {OrtEnv.Instance().GetVersionString()}");
+        
+        var availableProviders = OrtEnv.Instance().GetAvailableProviders();
+        info.AppendLine($"Available Providers: {string.Join(", ", availableProviders)}");
+        
+        if (availableProviders.Contains("CUDAExecutionProvider"))
+        {
+            info.AppendLine("✓ CUDA Execution Provider is available");
+            info.AppendLine("✓ Supports CUDA 12.8, 12.9 and later versions");
+        }
+        else
+        {
+            info.AppendLine("✗ CUDA Execution Provider not available");
+            info.AppendLine("  Install CUDA 12.8+ and compatible drivers for GPU acceleration");
+        }
+        
+        return info.ToString();
+    }
 
     /// <summary>
     /// Initialize the ONNX depth estimator with a model file
@@ -40,18 +68,18 @@ public class OnnxDepthEstimator : IDisposable
             sessionOptions.ExecutionMode = ExecutionMode.ORT_PARALLEL;
             
             // Try to use GPU if available, fallback to CPU
-            bool cudaAvailable = false;
             try
             {
                 // Configure CUDA execution provider for CUDA 12.x support
                 // Use simple device ID configuration first
                 sessionOptions.AppendExecutionProvider_CUDA(0);
-                cudaAvailable = true;
+                _isUsingCuda = true;
                 Console.WriteLine("CUDA execution provider initialized for ONNX Runtime 1.21.0");
                 Console.WriteLine("Compatible with CUDA 12.8/12.9 and later versions");
             }
             catch (Exception cudaEx)
             {
+                _isUsingCuda = false;
                 Console.WriteLine($"CUDA not available or failed to initialize: {cudaEx.Message}");
                 Console.WriteLine("Falling back to CPU execution provider");
                 Console.WriteLine("For GPU acceleration, ensure:");
@@ -66,7 +94,7 @@ public class OnnxDepthEstimator : IDisposable
             _inputName = _session.InputMetadata.Keys.First();
             _outputName = _session.OutputMetadata.Keys.First();
 
-            var provider = cudaAvailable ? "CUDA (GPU)" : "CPU";
+            var provider = _isUsingCuda ? "CUDA (GPU)" : "CPU";
             Console.WriteLine($"Depth estimation model loaded: {Path.GetFileName(modelPath)}");
             Console.WriteLine($"Execution provider: {provider}");
             Console.WriteLine($"Input: {_inputName}, Output: {_outputName}");
@@ -76,6 +104,11 @@ public class OnnxDepthEstimator : IDisposable
             throw new InvalidOperationException($"Failed to load ONNX model: {ex.Message}", ex);
         }
     }
+
+    /// <summary>
+    /// Check if this instance is using CUDA for acceleration
+    /// </summary>
+    public bool IsUsingCuda => _isUsingCuda;
 
     /// <summary>
     /// Estimate depth from a single RGB image using the ONNX model

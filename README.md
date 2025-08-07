@@ -103,6 +103,19 @@ await processor.ConvertImageAsync("input.jpg", "output_sbs.jpg");
 await processor.ConvertVideoAsync("input.mp4", "output_sbs.mp4");
 ```
 
+## Installation Requirements
+
+### CUDA 12.8/12.9 GPU Support (Optional)
+
+For optimal GPU performance, ensure the following are installed:
+
+1. **NVIDIA GPU**: Compatible graphics card with CUDA Compute Capability 3.5+
+2. **NVIDIA CUDA Toolkit 12.8 or 12.9**: Download from [NVIDIA Developer](https://developer.nvidia.com/cuda-downloads)
+3. **cuDNN Library**: Compatible with CUDA 12.x (usually included with CUDA toolkit)
+4. **NVIDIA Graphics Drivers**: Latest drivers supporting CUDA 12.x
+
+The application will automatically detect CUDA availability and fall back to CPU processing if GPU acceleration is not available.
+
 ## Dependencies
 
 - **Microsoft.ML.OnnxRuntime.Gpu 1.21.0**: For ONNX model inference with CUDA 12.8/12.9 support

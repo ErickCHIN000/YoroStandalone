@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("YORO.ConsoleApp")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c2ab7d1c4b86cb18b95d5b7d15887312189b59a1")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+38ae2a835bc6f880e78a2085d859a74e4003b438")]
 [assembly: System.Reflection.AssemblyProductAttribute("YORO.ConsoleApp")]
 [assembly: System.Reflection.AssemblyTitleAttribute("YORO.ConsoleApp")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

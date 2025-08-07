@@ -35,8 +35,12 @@ public class VideoProcessor : IDisposable
         {
             try
             {
+                // Display ONNX Runtime execution provider information
+                Console.WriteLine(OnnxDepthEstimator.GetExecutionProviderInfo());
+                
                 _onnxDepthEstimator = new OnnxDepthEstimator(modelPath);
                 Console.WriteLine("Using ONNX-based depth estimation (Depth-Anything V2)");
+                Console.WriteLine($"GPU Acceleration: {(_onnxDepthEstimator.IsUsingCuda ? "Enabled (CUDA)" : "Disabled (CPU)")}");
             }
             catch (Exception ex)
             {

@@ -11,6 +11,10 @@ class Program
         Console.WriteLine("YORO Standalone - 2D to 3D SBS Video Converter");
         Console.WriteLine("===============================================");
         Console.WriteLine();
+        
+        // Display ONNX Runtime capabilities
+        Console.WriteLine(OnnxDepthEstimator.GetExecutionProviderInfo());
+        Console.WriteLine();
 
         if (args.Length == 0)
         {
