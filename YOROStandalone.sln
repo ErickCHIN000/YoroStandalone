@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YORO.Core", "YORO.Core\YORO.Core.csproj", "{67ACB741-EE90-4A0A-90B8-58C1D70258B0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YORO.ConsoleApp", "YORO.ConsoleApp\YORO.ConsoleApp.csproj", "{ED08CF73-C82E-4D10-812B-E928D6DCB7AD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{67ACB741-EE90-4A0A-90B8-58C1D70258B0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{67ACB741-EE90-4A0A-90B8-58C1D70258B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{67ACB741-EE90-4A0A-90B8-58C1D70258B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{67ACB741-EE90-4A0A-90B8-58C1D70258B0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ED08CF73-C82E-4D10-812B-E928D6DCB7AD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ED08CF73-C82E-4D10-812B-E928D6DCB7AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ED08CF73-C82E-4D10-812B-E928D6DCB7AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ED08CF73-C82E-4D10-812B-E928D6DCB7AD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
