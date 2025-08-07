@@ -1,6 +1,6 @@
 # YORO Standalone - 2D to 3D SBS Video Converter
 
-This is a standalone .NET library that converts 2D input videos/images to 3D Side-by-Side (SBS) format without Unity dependencies. It's based on the YORO (You Only Render Once) VR rendering optimization technique.
+This is a standalone .NET library that converts 2D input videos/images to 3D Side-by-Side (SBS) format without Unity dependencies. It's based on the YORO (You Only Render Once) VR rendering optimization technique. [YORO-VR](https://github.com/YORO-VR/YORO-VR)
 
 ## Features
 
@@ -150,5 +150,6 @@ The core algorithm implements the YORO technique:
 3. **Reprojection**: Map pixels from source to target positions
 4. **Gap Filling**: Fill gaps using interpolation techniques
 5. **SBS Composition**: Combine left and right eye views side-by-side
+
 
 This approach allows generating stereo views from a single camera input, enabling VR content creation from traditional 2D sources.
