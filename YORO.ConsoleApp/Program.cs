@@ -74,7 +74,7 @@ class Program
             Patcher = YOROPerformancePatcher.YORO
         };
 
-        var processor = new VideoProcessor(config);
+        using var processor = await VideoProcessor.CreateAsync(config, useOnnxDepth: true);
 
         Console.WriteLine("Processing image...");
         var success = await processor.ConvertImageAsync(demoImagePath, outputImagePath);
@@ -163,7 +163,7 @@ class Program
         Console.WriteLine($"Patcher: {config.Patcher}");
         Console.WriteLine();
 
-        var processor = new VideoProcessor(config);
+        using var processor = await VideoProcessor.CreateAsync(config, useOnnxDepth: true);
 
         try
         {
